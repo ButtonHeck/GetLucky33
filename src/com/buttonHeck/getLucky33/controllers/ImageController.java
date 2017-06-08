@@ -74,7 +74,7 @@ public class ImageController {
     private static void createResultFrameData() {
         resultFrameSW = new BufferedImage[4];
         for (int i = 0; i < resultFrameSW.length; i++) {
-            resultFrameSW[i] = getScaledBufferedImage(sheet.getSubimage(80, 96, 5 * CARD_WIDTH, 23), 3);
+            resultFrameSW[i] = getScaledBufferedImage(sheet.getSubimage(80, 96, 5 * CARD_WIDTH, 23), 4);
         }
         changeColor(resultFrameSW[1], 0xFF999999, 0xFFF43955);
         changeColor(resultFrameSW[2], 0xFF999999, 0xFF50C556);
@@ -183,7 +183,7 @@ public class ImageController {
         return scoreImages;
     }
 
-    public static Image getResultFrameImage(int index) {
+    static Image getResultFrameImage(int index) {
         return resultFrameImages[index];
     }
 }

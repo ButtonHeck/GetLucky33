@@ -91,15 +91,12 @@ public class Game extends Application {
                 ButtonController.getMenuStartButton(), ButtonController.getMenuExitButton());
     }
 
-    private void createGameObjects() {
+    private static void createGameObjects() {
         gameRoot = new Group();
         gameCanvas = new Canvas(GAME_WIDTH, GAME_HEIGHT);
         gameCanvas.getGraphicsContext2D().drawImage(ImageController.getBackground(), 0, 0);
         score = new Image[5];
-        for (int i = 0; i < score.length; i++) {
-            score[i] = ImageController.getScoreImages()[0];
-            gameCanvas.getGraphicsContext2D().drawImage(score[i], GAME_WIDTH / 2 - score[i].getWidth() / 2, 80 + i * score[i].getHeight());
-        }
+        drawScoreBulbs();
         playerScoreText = new Text("Your score: " + playerScore);
         playerScoreText.setFont(SCORE_FONT);
         playerScoreText.setEffect(TEXT_BLUR);
@@ -117,6 +114,13 @@ public class Game extends Application {
                 ButtonController.getGameExitButton(),
                 playerScoreText, aiScoreText);
         gameScene = new Scene(gameRoot, GAME_WIDTH, GAME_HEIGHT);
+    }
+
+    private static void drawScoreBulbs() {
+        for (int i = 0; i < score.length; i++) {
+            score[i] = ImageController.getScoreImages()[0];
+            gameCanvas.getGraphicsContext2D().drawImage(score[i], GAME_WIDTH / 2 - score[i].getWidth() / 2, 80 + i * score[i].getHeight());
+        }
     }
 
     private void initializeDelayTimeline() {
@@ -169,7 +173,7 @@ public class Game extends Application {
     public static void bonusEvent(BonusCard randomCard) {
         playerBonusCards.remove(randomCard);
         gameRoot.getChildren().remove(randomCard);
-        addPlainCardPlayer(randomCard);
+        addPlainCardPlayer(PlainCard.getPlainCardByNominal(randomCard.getNominal()));
         setPlayerBonusCardsActive(false);
     }
 
@@ -212,7 +216,13 @@ public class Game extends Application {
         delay.setOnFinished(e -> {
             aiTurn();
             if (playerPassed) {
+                System.out.println("PLAYER PASSED");
                 while (!roundEnded) {
+                    try {
+                        Thread.sleep(250);
+                    } catch (InterruptedException e1) {
+                        e1.printStackTrace();
+                    }
                     checkScore();
                     aiTurn();
                 }
@@ -236,8 +246,10 @@ public class Game extends Application {
             aiCardsXOffset = 0;
             aiCardsYOffset += 1.04;
         }
-        gameRoot.getChildren().add(aiCard);
-        aiScore += aiCard.getNominal();
+        if (!gameRoot.getChildren().contains(aiCard)) {
+            gameRoot.getChildren().add(aiCard);
+            aiScore += aiCard.getNominal();
+        }
         updateAiInfo();
     }
 
@@ -248,7 +260,7 @@ public class Game extends Application {
         if (aiScore <= WINNING_SCORE - 10 || !aiBonusActive)
             return;
         if (aiScore == WINNING_SCORE) {
-            aiPassed = true;
+            setAiPassed(true);
             return;
         }
         boolean hasPlusOneCard = false;
@@ -341,6 +353,7 @@ public class Game extends Application {
             gameRoot.getChildren().remove(playerBonusCard);
         for (Card aiPlainCard : aiPlainCards)
             gameRoot.getChildren().removeAll(aiPlainCard);
+        drawScoreBulbs();
         playerCardsXOffset = playerCardsYOffset = aiCardsXOffset = aiCardsYOffset = 0;
         playerScore = aiScore = 0;
         playerWinrate = aiWinrate = 0;
@@ -362,6 +375,8 @@ public class Game extends Application {
     }
 
     public static void toMenu() {
+        if (gameRoot.getChildren().contains(resultFrame))
+            gameRoot.getChildren().remove(resultFrame);
         stage.setScene(menuScene);
     }
 
@@ -388,19 +403,21 @@ public class Game extends Application {
     private static void prepareForNextRound(int status) {
         roundEnded = true;
         playerBonusActive = aiBonusActive = false;
-        if (status < 0)
-            aiWinrate++;
-        else if (status > 0)
-            playerWinrate++;
-        else {
-            roundNumber++;
-        }
         score[roundNumber] = ImageController.getScoreImages()[status < 0 ? 1 : (status > 0 ? 2 : 0)];
         gameCanvas.getGraphicsContext2D().drawImage(score[roundNumber],
                 GAME_WIDTH / 2 - score[roundNumber].getWidth() / 2,
                 80 + roundNumber * score[roundNumber].getHeight());
+        if (status < 0) {
+            aiWinrate++;
+            roundNumber++;
+        } else if (status > 0) {
+            playerWinrate++;
+            roundNumber++;
+        }
         resultFrame = ButtonController.getResultFrame(status);
         gameRoot.getChildren().add(resultFrame);
+        if (playerWinrate == 3 || aiWinrate == 3)
+            gameStarted = false;
     }
 
     //todo: duplicating code with Game.resetObjects()
@@ -419,6 +436,12 @@ public class Game extends Application {
         playerPassed = false;
         aiPassed = false;
         roundEnded = false;
+        updatePlayerInfo();
+        updateAiInfo();
+        if (!gameStarted) {
+            resetObjects();
+            toMenu();
+        }
     }
 
     public static void main(String[] args) {
@@ -442,8 +465,8 @@ public class Game extends Application {
         return aiPassed;
     }
 
-    private static void setAiPassed(boolean aiPassed) {
-        Game.aiPassed = aiPassed;
+    private static void setAiPassed(boolean passed) {
+        aiPassed = passed;
         updateAiInfo();
     }
 
@@ -454,4 +477,17 @@ public class Game extends Application {
     public static boolean isGameStarted() {
         return gameStarted;
     }
+
+    public static boolean isRoundEnded() {
+        return roundEnded;
+    }
+
+    public static int getAiScore() {
+        return aiScore;
+    }
+
+    public static int getPlayerScore() {
+        return playerScore;
+    }
+
 }

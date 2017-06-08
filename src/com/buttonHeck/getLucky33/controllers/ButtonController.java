@@ -27,46 +27,48 @@ public class ButtonController {
         gamePassButton = new Button(xOf(gameTurnButton) + widthOf(gameTurnButton) + 72, GAME_HEIGHT - 120, "Pass", false);
         gameExitButton = new Button(xOf(gamePassButton) + widthOf(gamePassButton) + 72, GAME_HEIGHT - 120, "Exit", true);
 
-        resultFrame = new Button(GAME_WIDTH / 2 - ImageController.getResultFrameImage(0).getWidth() / 2, GAME_HEIGHT / 2, "", true);
+        resultFrame = new Button(GAME_WIDTH / 2 - ImageController.getResultFrameImage(0).getWidth() / 2,
+                GAME_HEIGHT / 2 - ImageController.getResultFrameImage(0).getHeight() / 2, "", true);
+        resultFrame.sprite.setImage(ImageController.getResultFrameImage(0));
     }
 
     public static class Button extends Group {
         private static Font FONT = new Font(42);
         private static GaussianBlur textBlur = new GaussianBlur(1);
-        private ImageView image;
+        private ImageView sprite;
         private Text text;
         private boolean active;
 
         Button(double x, double y, String txt, boolean active) {
-            image = new ImageView(ImageController.getButtonImage(this.active ? 0 : 2));
+            sprite = new ImageView(ImageController.getButtonImage(this.active ? 0 : 2));
             text = new Text(txt);
             text.setFont(FONT);
             text.setEffect(textBlur);
             setX(this, x);
             setY(this, y);
-            setX(text, xOf(image) + halfWidthOf(image) - halfWidthOf(text));
-            setY(text, yOf(image) + halfHeightOf(image) + halfHeightOf(text) - 10);
+            setX(text, xOf(sprite) + halfWidthOf(sprite) - halfWidthOf(text));
+            setY(text, yOf(sprite) + halfHeightOf(sprite) + halfHeightOf(text) - 10);
             setActive(active);
-            getChildren().addAll(image, text);
+            getChildren().addAll(sprite, text);
         }
 
         void setActive(boolean active) {
             this.active = active;
             renewActionListeners();
-            image.setImage(ImageController.getButtonImage(active ? 0 : 2));
+            sprite.setImage(ImageController.getButtonImage(active ? 0 : 2));
         }
 
         private void renewActionListeners() {
             setOnMouseEntered(e -> {
                 if (!active)
                     return;
-                image.setImage(ImageController.getButtonImage(1));
+                sprite.setImage(ImageController.getButtonImage(1));
                 SoundController.buttonHovered();
             });
             setOnMouseExited(e -> {
                 if (!active)
                     return;
-                image.setImage(ImageController.getButtonImage(0));
+                sprite.setImage(ImageController.getButtonImage(0));
             });
             setOnMouseClicked(e -> {
                 if (!active)
@@ -76,14 +78,17 @@ public class ButtonController {
                     gameStartButton.setActive(false);
                     gameTurnButton.setActive(true);
                     gamePassButton.setActive(true);
-                    if (!Game.isGameStarted()) {
+                    if (!Game.isGameStarted())
                         Game.initBonusCards();
-                        Game.addPlainCards();
-                    }
+                    Game.addPlainCards();
+                    Game.setPlayerBonusCardsActive(true);
+                    Game.setAiBonusCardsActive(true);
                 } else if (this == gameTurnButton) {
                     Game.setPlayerBonusCardsActive(true);
                     Game.setAiBonusCardsActive(true);
                     Game.checkScore();
+                    if (Game.isRoundEnded())
+                        return;
                     if (!Game.isPlayerPassed())
                         Game.addPlainCardPlayer(PlainCard.getRandomCard());
                     if (!Game.isAiPassed())
@@ -94,6 +99,8 @@ public class ButtonController {
                     Game.setPlayerPassed(true);
                     Game.updatePlayerInfo();
                     Game.checkScore();
+                    if (!Game.isAiPassed())
+                        Game.addPlainCardAI();
                 } else if (this == gameExitButton) {
                     Game.toMenu();
                     Game.resetObjects();
@@ -135,14 +142,17 @@ public class ButtonController {
     }
 
     public static Button getResultFrame(int status) {
+        resultFrame.text.setText(status == 0 ? "Draw!" : (Game.getPlayerScore() + " : " + Game.getAiScore()));
+        setX(resultFrame.text, halfWidthOf(resultFrame) - halfWidthOf(resultFrame.text));
         resultFrame.setOnMouseEntered(e -> {
             SoundController.buttonHovered();
-            resultFrame.image.setImage(ImageController.getResultFrameImage(status < 0 ? 1 : (status > 0 ? 2 : 3)));
+            resultFrame.sprite.setImage(ImageController.getResultFrameImage(status < 0 ? 1 : (status > 0 ? 2 : 3)));
         });
-        resultFrame.setOnMouseExited(e -> resultFrame.image.setImage(ImageController.getResultFrameImage(0)));
+        resultFrame.setOnMouseExited(e -> resultFrame.sprite.setImage(ImageController.getResultFrameImage(0)));
         resultFrame.setOnMouseClicked(e -> {
             SoundController.buttonClicked();
             Game.nextRound();
+            gameStartButton.setActive(true);
         });
         return resultFrame;
     }
