@@ -27,42 +27,45 @@ import static com.buttonHeck.getLucky33.HelperMethods.*;
 
 public class Game extends Application {
 
+    //Application stuff
+    public static final int GAME_WIDTH = 1020, GAME_HEIGHT = 720, WIN_SCORE = 33;
+    private static final Font FONT = new Font(32), SCORE_FONT = new Font(24);
+    private static final GaussianBlur TEXT_BLUR = new GaussianBlur(1);
+
+    //Game stuff
     private static Timeline delay;
-    public static final int GAME_WIDTH = 1020, GAME_HEIGHT = 720;
-    public static final int WINNING_SCORE = 33;
     private static Stage stage;
     private static Group menuRoot, gameRoot;
-    private static Canvas gameCanvas;
     private static Scene menuScene, gameScene;
-    private static final Font FONT = new Font(32), SCORE_FONT = new Font(24);
-    private static Text hints[];
+    private static Canvas gameCanvas;
+    private static ButtonController.Button resultFrame;
+
+    //Cards handling
     private static ArrayList<BonusCard> playerBonusCards = new ArrayList<>();
     private static ArrayList<Card> playerPlainCards = new ArrayList<>();
     private static ArrayList<BonusCard> aiBonusCards = new ArrayList<>();
     private static ArrayList<Card> aiPlainCards = new ArrayList<>();
     private static double playerCardsXOffset = 0, playerCardsYOffset = 0, aiCardsXOffset = 0, aiCardsYOffset = 0;
-    private static int playerScore = 0, aiScore = 0;
-    private static int playerWinrate = 0, aiWinrate = 0;
-    private static int roundNumber = 0;
+
+    //logic & score
+    private static int playerScore = 0, aiScore = 0, playerWinrate = 0, aiWinrate = 0, roundNumber = 0;
     private static Text playerScoreText, aiScoreText;
-    private static boolean playerBonusActive = true, aiBonusActive = true;
-    private static final GaussianBlur TEXT_BLUR = new GaussianBlur(1);
-    private static boolean playerPassed, aiPassed, roundEnded = false, gameStarted = false;
+    private static boolean aiBonusActive = true;
+    private static boolean playerPassed, aiPassed, roundEnded, gameInProgress;
     private static Image score[];
-    private static ButtonController.Button resultFrame;
 
     @Override
     public void start(Stage stage) throws Exception {
         Game.stage = stage;
-        createMenuObjects();
-        createGameObjects();
+        buildMenuTree();
+        buildGameTree();
         initializeDelayTimeline();
         createWindow();
     }
 
-    private void createMenuObjects() {
+    private static void buildMenuTree() {
         menuRoot = new Group();
-        hints = new Text[4];
+        Text[] hints = new Text[4];
         hints[0] = new Text("Get as close to 33 as you can,");
         hints[1] = new Text("but do not exceed this score.");
         hints[2] = new Text("You may use bonus cards to change your score,");
@@ -87,11 +90,17 @@ public class Game extends Application {
         setY(hints[1], GAME_HEIGHT / 2 + 40);
         setY(hints[2], GAME_HEIGHT / 2 + 80);
         setY(hints[3], GAME_HEIGHT / 2 + 120);
-        menuRoot.getChildren().addAll(hints[0], hints[1], hints[2], hints[3],
-                ButtonController.getMenuStartButton(), ButtonController.getMenuExitButton());
+        Text author = new Text("created by ButtonHeck, 2017");
+        author.setFont(Font.font(24));
+        author.setFill(Color.PINK);
+        author.setEffect(TEXT_BLUR);
+        setX(author, GAME_WIDTH / 1.6);
+        setY(author, GAME_HEIGHT - 30);
+        menuRoot.getChildren().addAll(hints[0], hints[1], hints[2], hints[3], author,
+                ButtonController.getMenuStart(), ButtonController.getMenuExit());
     }
 
-    private static void createGameObjects() {
+    private static void buildGameTree() {
         gameRoot = new Group();
         gameCanvas = new Canvas(GAME_WIDTH, GAME_HEIGHT);
         gameCanvas.getGraphicsContext2D().drawImage(ImageController.getBackground(), 0, 0);
@@ -108,85 +117,70 @@ public class Game extends Application {
         setX(aiScoreText, 580);
         setY(aiScoreText, 35);
         gameRoot.getChildren().addAll(gameCanvas,
-                ButtonController.getGameStartButton(),
-                ButtonController.getGameTurnButton(),
-                ButtonController.getGamePassButton(),
-                ButtonController.getGameExitButton(),
+                ButtonController.getGameStart(),
+                ButtonController.getGameTurn(),
+                ButtonController.getGamePass(),
+                ButtonController.getGameExit(),
                 playerScoreText, aiScoreText);
         gameScene = new Scene(gameRoot, GAME_WIDTH, GAME_HEIGHT);
     }
 
     private static void drawScoreBulbs() {
         for (int i = 0; i < score.length; i++) {
-            score[i] = ImageController.getScoreImages()[0];
+            score[i] = ImageController.getScoreImage(0);
             gameCanvas.getGraphicsContext2D().drawImage(score[i], GAME_WIDTH / 2 - score[i].getWidth() / 2, 80 + i * score[i].getHeight());
         }
     }
 
-    private void initializeDelayTimeline() {
-        KeyFrame delayFrame = new KeyFrame(Duration.millis(250), e -> {/*nop*/});
+    private static void initializeDelayTimeline() {
+        KeyFrame frame = new KeyFrame(Duration.millis(250), e -> {/*nop*/});
         delay = new Timeline();
-        delay.getKeyFrames().add(delayFrame);
+        delay.getKeyFrames().add(frame);
         delay.setCycleCount(1);
     }
 
-    private void createWindow() {
+    private static void createWindow() {
         menuScene = new Scene(menuRoot, GAME_WIDTH, GAME_HEIGHT, Color.web("001b5a"));
         stage.setScene(menuScene);
         stage.setResizable(false);
-        stage.setTitle("Get Lucky 33 alpha");
+        stage.setTitle("Get Lucky 33");
         stage.show();
         SoundController.startSound();
     }
 
     public static void initBonusCards() {
-        gameStarted = true;
-        for (BonusCard playerBonusCard : playerBonusCards)
-            gameRoot.getChildren().remove(playerBonusCard);
-        for (BonusCard playerBonusCard : playerBonusCards)
-            gameRoot.getChildren().remove(playerBonusCard);
-        playerBonusCards.clear();
-        aiBonusCards.clear();
+        gameInProgress = true;
         for (int i = 0; i < 4; ) {
-            BonusCard randomCard = BonusCard.getRandomPlayerBonusCard();
-            if (playerBonusCards.contains(randomCard)) continue;
-            playerBonusCards.add(randomCard);
-            randomCard.setOnMouseClicked(e -> {
-                bonusEvent(randomCard);
-            });
-            setX(randomCard, i * 75 + 72);
-            setY(randomCard, 430);
-            gameRoot.getChildren().add(randomCard);
+            BonusCard card = BonusCard.getRandomPlayerBonusCard();
+            if (playerBonusCards.contains(card)) continue;
+            playerBonusCards.add(card);
+            setX(card, i * 75 + 72);
+            setY(card, 430);
+            gameRoot.getChildren().add(card);
             ++i;
         }
         for (int i = 0; i < 4; ) {
-            BonusCard randomAiCard = BonusCard.getRandomAiBonusCard();
-            if (aiBonusCards.contains(randomAiCard)) continue;
-            aiBonusCards.add(randomAiCard);
-            setX(randomAiCard, GAME_WIDTH - 160 - i * 75);
-            setY(randomAiCard, 430);
-            gameRoot.getChildren().add(randomAiCard);
+            BonusCard aiCard = BonusCard.getRandomAiBonusCard();
+            if (aiBonusCards.contains(aiCard)) continue;
+            aiBonusCards.add(aiCard);
+            setX(aiCard, GAME_WIDTH - 160 - i * 75);
+            setY(aiCard, 430);
+            gameRoot.getChildren().add(aiCard);
             ++i;
         }
     }
 
-    public static void bonusEvent(BonusCard randomCard) {
+    public static void handleBonus(BonusCard card) {
         SoundController.bonusCard();
-        playerBonusCards.remove(randomCard);
-        gameRoot.getChildren().remove(randomCard);
-        addPlainCardPlayer(PlainCard.getPlainCardByNominal(randomCard.getNominal()));
+        playerBonusCards.remove(card);
+        gameRoot.getChildren().remove(card);
         setPlayerBonusCardsActive(false);
+        addPlainCardPlayer(PlainCard.getPlainCardByNominal(card.getNominal()));
     }
 
     public static void setPlayerBonusCardsActive(boolean active) {
-        playerBonusActive = active;
         for (BonusCard card : playerBonusCards)
             card.setActive(active);
-    }
-
-    public static void addPlainCards() {
-        addPlainCardPlayer(PlainCard.getRandomCard());
-        addPlainCardAI();
     }
 
     public static void addPlainCardPlayer(Card playerCard) {
@@ -204,34 +198,24 @@ public class Game extends Application {
         updatePlayerInfo();
     }
 
-    public static void updatePlayerInfo() {
-        playerScoreText.setText("Your score: " + playerScore + (playerPassed ? " (Passed)" : ""));
-    }
-
-    private static void updateAiInfo() {
-        aiScoreText.setText("Opponent score: " + aiScore + (aiPassed ? " (Passed)" : ""));
-    }
-
-    public static void addPlainCardAI() {
+    public static void waitForAI() {
         delay();
         delay.setOnFinished(e -> {
-            aiTurn();
+            if (roundEnded)
+                return;
+            addAiCard(PlainCard.getRandomPlainCard());
+            checkAI();
             if (playerPassed) {
                 delay.setOnFinished(nop -> {/*nop*/});
                 while (!roundEnded) {
                     checkScore();
-                    aiTurn();
+                    if (roundEnded)
+                        return;
+                    addAiCard(PlainCard.getRandomPlainCard());
+                    checkAI();
                 }
             }
         });
-    }
-
-    private static void aiTurn() {
-        if (roundEnded)
-            return;
-        PlainCard aiCard = PlainCard.getRandomCard();
-        addAiCard(aiCard);
-        checkAI();
     }
 
     private static void addAiCard(Card aiCard) {
@@ -250,13 +234,10 @@ public class Game extends Application {
     }
 
     private static void checkAI() {
-        System.out.println("CHECK AI");
-        for (BonusCard card : aiBonusCards)
-            System.out.println(card.getNominal());
-        if (aiScore <= WINNING_SCORE - 10 || !aiBonusActive)
+        if (aiScore <= WIN_SCORE - 10 || !aiBonusActive)
             return;
-        if (aiScore == WINNING_SCORE) {
-            setAiPassed(true);
+        if (aiScore == WIN_SCORE) {
+            setAiPassed();
             return;
         }
         boolean hasPlusOneCard = false;
@@ -266,16 +247,16 @@ public class Game extends Application {
                 break;
             }
         }
-        if (aiScore == WINNING_SCORE - 1 && playerPassed && playerScore == WINNING_SCORE - 1 && !hasPlusOneCard) {
-            setAiPassed(true);
+        if (aiScore == WIN_SCORE - 1 && playerPassed && playerScore == WIN_SCORE - 1 && !hasPlusOneCard) {
+            setAiPassed();
             return;
         } else {
             Iterator<BonusCard> cardIterator = aiBonusCards.iterator();
             while (cardIterator.hasNext()) {
                 Card c = cardIterator.next();
                 int potentialScore = aiScore + c.getNominal();
-                if (potentialScore == WINNING_SCORE || potentialScore == playerScore && playerPassed) {
-                    setAiPassed(true);
+                if (potentialScore == WIN_SCORE || potentialScore == playerScore && playerPassed) {
+                    setAiPassed();
                     aiBonusCards.remove(c);
                     gameRoot.getChildren().remove(c);
                     aiBonusActive = false;
@@ -284,7 +265,7 @@ public class Game extends Application {
                 }
             }
         }
-        if (aiScore > WINNING_SCORE)
+        if (aiScore > WIN_SCORE)
             chooseCardDecreasingScore();
         if (playerPassed)
             chooseCardPlayerPassed();
@@ -298,8 +279,8 @@ public class Game extends Application {
             aiBonusActive = false;
             addAiCard(PlainCard.getPlainCardByNominal(result.getNominal()));
         }
-        if (aiScore == WINNING_SCORE || (aiScore == WINNING_SCORE - 1 && (playerScore != 33 && !playerPassed)))
-            setAiPassed(true);
+        if (aiScore == WIN_SCORE || (aiScore == WIN_SCORE - 1 && (playerScore != WIN_SCORE && !playerPassed)))
+            setAiPassed();
     }
 
     private static Card findMostSuitableCard() {
@@ -308,7 +289,7 @@ public class Game extends Application {
             if (card.getNominal() > 0)
                 continue;
             int potentialScore = aiScore + card.getNominal();
-            if ((potentialScore >= playerScore || playerScore > WINNING_SCORE) && potentialScore <= WINNING_SCORE) {
+            if ((potentialScore >= playerScore || playerScore > WIN_SCORE) && potentialScore <= WIN_SCORE) {
                 if (result == null) {
                     result = card;
                     continue;
@@ -321,17 +302,17 @@ public class Game extends Application {
     }
 
     private static void chooseCardPlayerPassed() {
-        if (aiScore <= WINNING_SCORE && aiScore >= playerScore) {
-            setAiPassed(true);
+        if (aiScore <= WIN_SCORE && aiScore >= playerScore) {
+            setAiPassed();
             checkScore();
             return;
         }
-        Iterator<BonusCard> cardIterator = aiBonusCards.iterator();
-        while (cardIterator.hasNext()) {
-            Card c = cardIterator.next();
+        Iterator<BonusCard> it = aiBonusCards.iterator();
+        while (it.hasNext()) {
+            Card c = it.next();
             int potentialScore = aiScore + c.getNominal();
-            if (potentialScore >= playerScore && potentialScore <= WINNING_SCORE) {
-                aiBonusCards.remove(c);
+            if (potentialScore >= playerScore && potentialScore <= WIN_SCORE) {
+                it.remove();
                 gameRoot.getChildren().remove(c);
                 aiBonusActive = false;
                 addAiCard(PlainCard.getPlainCardByNominal(c.getNominal()));
@@ -340,104 +321,118 @@ public class Game extends Application {
         }
     }
 
-    public static void resetObjects() {
-        for (BonusCard playerBonusCard : playerBonusCards)
-            gameRoot.getChildren().remove(playerBonusCard);
-        for (Card playerPlainCard : playerPlainCards)
-            gameRoot.getChildren().removeAll(playerPlainCard);
-        for (BonusCard playerBonusCard : aiBonusCards)
-            gameRoot.getChildren().remove(playerBonusCard);
-        for (Card aiPlainCard : aiPlainCards)
-            gameRoot.getChildren().removeAll(aiPlainCard);
-        drawScoreBulbs();
-        playerCardsXOffset = playerCardsYOffset = aiCardsXOffset = aiCardsYOffset = 0;
-        playerScore = aiScore = 0;
-        playerWinrate = aiWinrate = 0;
-        roundNumber = 0;
-        playerScoreText.setText("Your score: " + playerScore);
-        aiScoreText.setText("Opponent score: " + aiScore);
-        playerBonusActive = true;
-        aiBonusActive = true;
-        playerPassed = false;
-        aiPassed = false;
-        roundEnded = false;
-        gameStarted = false;
-        BonusCard.resetCards();
-    }
-
-
-    public static void startGame() {
-        stage.setScene(gameScene);
-    }
-
-    public static void toMenu() {
-        if (gameRoot.getChildren().contains(resultFrame))
-            gameRoot.getChildren().remove(resultFrame);
-        stage.setScene(menuScene);
-    }
-
-    private static void delay() {
-        delay.play();
-    }
-
     public static void checkScore() {
         if ((playerPassed && aiPassed && aiScore <= 33 && aiScore > playerScore)
-                || (playerScore > WINNING_SCORE && aiScore <= WINNING_SCORE)
-                || (playerPassed && (playerScore <= WINNING_SCORE && (aiScore > playerScore && aiScore <= WINNING_SCORE))))
-            prepareForNextRound(-1);
-        else if ((playerScore > WINNING_SCORE && aiScore > WINNING_SCORE)
-                || (playerScore == WINNING_SCORE && aiScore == WINNING_SCORE)
+                || (playerScore > WIN_SCORE && aiScore <= WIN_SCORE)
+                || (playerPassed && (playerScore <= WIN_SCORE && (aiScore > playerScore && aiScore <= WIN_SCORE))))
+            showResult(-1);
+        else if ((playerScore > WIN_SCORE && aiScore > WIN_SCORE)
+                || (playerScore == WIN_SCORE && aiScore == WIN_SCORE)
                 || (playerPassed && aiPassed && playerScore == aiScore))
-            prepareForNextRound(0);
+            showResult(0);
         else if ((playerPassed && aiPassed && aiScore <= 33 && aiScore < playerScore)
-                || (playerScore <= WINNING_SCORE && aiScore > WINNING_SCORE))
-            prepareForNextRound(1);
+                || (playerScore <= WIN_SCORE && aiScore > WIN_SCORE))
+            showResult(1);
     }
 
     //-1 = you lose, 0 = draw, 1 = you win
-    private static void prepareForNextRound(int status) {
+    private static void showResult(int status) {
         SoundController.result();
         roundEnded = true;
-        playerBonusActive = aiBonusActive = false;
-        score[roundNumber] = ImageController.getScoreImages()[status < 0 ? 1 : (status > 0 ? 2 : 0)];
+        aiBonusActive = false;
+        score[roundNumber] = ImageController.getScoreImage(status < 0 ? 1 : (status > 0 ? 2 : 0));
         gameCanvas.getGraphicsContext2D().drawImage(score[roundNumber],
                 GAME_WIDTH / 2 - score[roundNumber].getWidth() / 2,
                 80 + roundNumber * score[roundNumber].getHeight());
-        if (status < 0) {
-            aiWinrate++;
-            roundNumber++;
-        } else if (status > 0) {
-            playerWinrate++;
-            roundNumber++;
+        if (status != 0) {
+            ++roundNumber;
+            if (status < 0)
+                ++aiWinrate;
+            else
+                ++playerWinrate;
         }
         resultFrame = ButtonController.getResultFrame(status);
         gameRoot.getChildren().add(resultFrame);
         if (playerWinrate == 3 || aiWinrate == 3)
-            gameStarted = false;
+            gameInProgress = false;
     }
 
-    //todo: duplicating code with Game.resetObjects()
-    public static void nextRound() {
+    public static void resetGame() {
+        clearBonusCards();
+        clearPlainCards();
+        drawScoreBulbs();
+        resetScore();
+        playerWinrate = aiWinrate = 0;
+        roundNumber = 0;
+        playerScoreText.setText("Your score: " + playerScore);
+        aiScoreText.setText("Opponent score: " + aiScore);
+        resetLogic();
+        gameInProgress = false;
+        BonusCard.resetCards();
+    }
+
+    public static void setupNextRound() {
         gameRoot.getChildren().remove(resultFrame);
+        resetScore();
+        clearPlainCards();
+        resetLogic();
+        updatePlayerInfo();
+        updateAiInfo();
+        if (!gameInProgress) {
+            resetGame();
+            toMenu();
+        }
+    }
+
+    private static void resetLogic() {
+        aiBonusActive = true;
+        playerPassed = false;
+        aiPassed = false;
+        roundEnded = false;
+    }
+
+    private static void resetScore() {
         playerCardsXOffset = playerCardsYOffset = aiCardsXOffset = aiCardsYOffset = 0;
         playerScore = aiScore = 0;
+    }
+
+    private static void clearBonusCards() {
+        for (BonusCard playerBonusCard : playerBonusCards)
+            gameRoot.getChildren().remove(playerBonusCard);
+        for (BonusCard playerBonusCard : aiBonusCards)
+            gameRoot.getChildren().remove(playerBonusCard);
+        playerBonusCards.clear();
+        aiBonusCards.clear();
+    }
+
+    private static void clearPlainCards() {
         for (Card playerPlainCard : playerPlainCards)
             gameRoot.getChildren().removeAll(playerPlainCard);
         for (Card aiPlainCard : aiPlainCards)
             gameRoot.getChildren().removeAll(aiPlainCard);
         playerPlainCards.clear();
         aiPlainCards.clear();
-        playerBonusActive = true;
-        aiBonusActive = true;
-        playerPassed = false;
-        aiPassed = false;
-        roundEnded = false;
-        updatePlayerInfo();
-        updateAiInfo();
-        if (!gameStarted) {
-            resetObjects();
-            toMenu();
-        }
+    }
+
+    public static void updatePlayerInfo() {
+        playerScoreText.setText("Your score: " + playerScore + (playerPassed ? " (Passed)" : ""));
+    }
+
+    private static void updateAiInfo() {
+        aiScoreText.setText("Opponent score: " + aiScore + (aiPassed ? " (Passed)" : ""));
+    }
+
+    public static void startGame() {
+        stage.setScene(gameScene);
+    }
+
+    public static void toMenu() {
+        gameRoot.getChildren().remove(resultFrame);
+        stage.setScene(menuScene);
+    }
+
+    private static void delay() {
+        delay.play();
     }
 
     public static void main(String[] args) {
@@ -451,9 +446,9 @@ public class Game extends Application {
         return playerPassed;
     }
 
-    public static void setPlayerPassed(boolean playerPassed) {
-        Game.playerPassed = playerPassed;
-        setPlayerBonusCardsActive(!playerPassed);
+    public static void setPlayerPassed() {
+        Game.playerPassed = true;
+        setPlayerBonusCardsActive(false);
         updatePlayerInfo();
     }
 
@@ -461,17 +456,17 @@ public class Game extends Application {
         return aiPassed;
     }
 
-    private static void setAiPassed(boolean passed) {
-        aiPassed = passed;
+    private static void setAiPassed() {
+        aiPassed = true;
         updateAiInfo();
     }
 
-    public static void setAiBonusCardsActive(boolean aiBonusActive) {
-        Game.aiBonusActive = aiBonusActive;
+    public static void activateAiBonusCards() {
+        Game.aiBonusActive = true;
     }
 
-    public static boolean isGameStarted() {
-        return gameStarted;
+    public static boolean isInProgress() {
+        return gameInProgress;
     }
 
     public static boolean isRoundEnded() {
@@ -485,5 +480,4 @@ public class Game extends Application {
     public static int getPlayerScore() {
         return playerScore;
     }
-
 }

@@ -8,10 +8,10 @@ import java.util.Random;
 public class PlainCard extends Card {
 
     private static PlainCard cards[];
-    private static Random random;
+    private static Random rnd;
 
     static {
-        random = new Random();
+        rnd = new Random();
         cards = new PlainCard[20];
         for (int i = 0; i < 10; i++)
             cards[i] = new PlainCard(ImageController.getPlainCardImage(i + 1), i + 1);
@@ -25,16 +25,14 @@ public class PlainCard extends Card {
         super(image, value);
     }
 
-    public static PlainCard getRandomCard() {
-        return cards[random.nextInt(10)].copy();
+    public static PlainCard getRandomPlainCard() {
+        return cards[rnd.nextInt(10)].copy();
     }
 
     public static Card getPlainCardByNominal(int nominal) {
-        if (nominal >= 1 && nominal <= 5) {
-            return cards[14 + nominal].copy();
-        } else {
-            return cards[9 + Math.abs(nominal)].copy();
-        }
+        return nominal >= 1 && nominal <= 5 ?
+                cards[14 + nominal].copy() :
+                cards[9 + Math.abs(nominal)].copy();
     }
 
     private PlainCard copy() {

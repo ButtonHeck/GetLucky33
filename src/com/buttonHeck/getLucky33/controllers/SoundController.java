@@ -4,7 +4,7 @@ import org.lwjgl.openal.AL;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.Sound;
 
-public class SoundController {
+public abstract class SoundController {
     private static Sound bonusCard, buttonClicked, buttonHovered, resultSound, startSound;
 
     static {

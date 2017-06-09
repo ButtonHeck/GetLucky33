@@ -7,7 +7,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-public class ImageController {
+public abstract class ImageController {
 
     private static final int CARD_WIDTH = 32, CARD_HEIGHT = 48;
 
@@ -155,12 +155,10 @@ public class ImageController {
         return result;
     }
 
+    //Getters
+
     public static Image getBackground() {
         return background;
-    }
-
-    public static Image getAiBonusCardImage() {
-        return aiBonusCardImage;
     }
 
     public static Image getPlainCardImage(int nominal) {
@@ -175,12 +173,16 @@ public class ImageController {
         else throw new IllegalArgumentException(nominal + " is not in range [-5;-1] or [1;5]");
     }
 
+    public static Image getAiBonusCardImage() {
+        return aiBonusCardImage;
+    }
+
     static Image getButtonImage(int status) {
         return buttonImages[status];
     }
 
-    public static Image[] getScoreImages() {
-        return scoreImages;
+    public static Image getScoreImage(int index) {
+        return scoreImages[index];
     }
 
     static Image getResultFrameImage(int index) {
