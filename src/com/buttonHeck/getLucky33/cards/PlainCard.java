@@ -29,15 +29,15 @@ public class PlainCard extends Card {
         return cards[random.nextInt(10)].copy();
     }
 
-    private PlainCard copy() {
-        return new PlainCard(this.getImage(), nominal);
-    }
-
     public static Card getPlainCardByNominal(int nominal) {
         if (nominal >= 1 && nominal <= 5) {
-            return cards[14 + nominal];
+            return cards[14 + nominal].copy();
         } else {
-            return cards[9 + Math.abs(nominal)];
+            return cards[9 + Math.abs(nominal)].copy();
         }
+    }
+
+    private PlainCard copy() {
+        return new PlainCard(this.getImage(), nominal);
     }
 }

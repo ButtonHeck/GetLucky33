@@ -136,7 +136,7 @@ public class Game extends Application {
         stage.setResizable(false);
         stage.setTitle("Get Lucky 33 alpha");
         stage.show();
-        SoundController.result();
+        SoundController.startSound();
     }
 
     public static void initBonusCards() {
@@ -171,6 +171,7 @@ public class Game extends Application {
     }
 
     public static void bonusEvent(BonusCard randomCard) {
+        SoundController.bonusCard();
         playerBonusCards.remove(randomCard);
         gameRoot.getChildren().remove(randomCard);
         addPlainCardPlayer(PlainCard.getPlainCardByNominal(randomCard.getNominal()));
@@ -216,13 +217,8 @@ public class Game extends Application {
         delay.setOnFinished(e -> {
             aiTurn();
             if (playerPassed) {
-                System.out.println("PLAYER PASSED");
+                delay.setOnFinished(nop -> {/*nop*/});
                 while (!roundEnded) {
-                    try {
-                        Thread.sleep(250);
-                    } catch (InterruptedException e1) {
-                        e1.printStackTrace();
-                    }
                     checkScore();
                     aiTurn();
                 }
@@ -384,7 +380,6 @@ public class Game extends Application {
         delay.play();
     }
 
-    //todo
     public static void checkScore() {
         if ((playerPassed && aiPassed && aiScore <= 33 && aiScore > playerScore)
                 || (playerScore > WINNING_SCORE && aiScore <= WINNING_SCORE)
@@ -401,6 +396,7 @@ public class Game extends Application {
 
     //-1 = you lose, 0 = draw, 1 = you win
     private static void prepareForNextRound(int status) {
+        SoundController.result();
         roundEnded = true;
         playerBonusActive = aiBonusActive = false;
         score[roundNumber] = ImageController.getScoreImages()[status < 0 ? 1 : (status > 0 ? 2 : 0)];
