@@ -1,4 +1,4 @@
-package com.buttonHeck.getLucky33.cards;
+package com.buttonHeck.getLucky33.card;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;

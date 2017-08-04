@@ -1,4 +1,4 @@
-package com.buttonHeck.getLucky33.controllers;
+package com.buttonHeck.getLucky33.handler;
 
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
@@ -7,7 +7,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-public abstract class ImageController {
+public abstract class ImageHandler {
 
     private static final int CARD_WIDTH = 32, CARD_HEIGHT = 48;
 
@@ -42,9 +42,9 @@ public abstract class ImageController {
     }
 
     private static void loadSheets() throws IOException {
-        backgroundSW = ImageIO.read(ImageController.class.getResource("/textures/background.png"));
+        backgroundSW = ImageIO.read(ImageHandler.class.getResource("/textures/background.png"));
         backgroundSW = getScaledBufferedImage(backgroundSW, 3);
-        sheet = ImageIO.read(ImageController.class.getResource("/textures/sheet.png"));
+        sheet = ImageIO.read(ImageHandler.class.getResource("/textures/sheet.png"));
         background = SwingFXUtils.toFXImage(backgroundSW, null);
     }
 
@@ -65,16 +65,20 @@ public abstract class ImageController {
     }
 
     private static void createBonusCardsImages() {
-        bonusCardsActiveSW = new BufferedImage[10];
-        bonusCardsImagesActive = new Image[bonusCardsActiveSW.length];
-        bonusCardsNonActiveSW = new BufferedImage[10];
-        for (int i = 0; i < bonusCardsActiveSW.length; i++)
-            bonusCardsActiveSW[i] = getScaledBufferedImage(sheet.getSubimage(i * CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT), 2);
-        loadFXImages(bonusCardsActiveSW, bonusCardsImagesActive);
+        createActiveCardsImages();
         createNonActiveCardsImages();
     }
 
+    private static void createActiveCardsImages() {
+        bonusCardsActiveSW = new BufferedImage[10];
+        for (int i = 0; i < bonusCardsActiveSW.length; i++)
+            bonusCardsActiveSW[i] = getScaledBufferedImage(sheet.getSubimage(i * CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT), 2);
+        bonusCardsImagesActive = new Image[bonusCardsActiveSW.length];
+        loadFXImages(bonusCardsActiveSW, bonusCardsImagesActive);
+    }
+
     private static void createNonActiveCardsImages() {
+        bonusCardsNonActiveSW = new BufferedImage[10];
         for (int i = 0; i < 5; i++) {
             bonusCardsNonActiveSW[i] = getScaledBufferedImage(sheet.getSubimage(i * CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT), 2);
             bonusCardsNonActiveSW[i + 5] = getScaledBufferedImage(sheet.getSubimage((i + 5) * CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT), 2);
@@ -171,7 +175,9 @@ public abstract class ImageController {
         if (nominal >= 1 && nominal <= 5)
             return active ? bonusCardsImagesActive[nominal + 4] : bonusCardsImagesNonActive[nominal + 4];
         else if (nominal <= -1 && nominal >= -5)
-            return active ? bonusCardsImagesActive[Math.abs(1 + nominal)] : bonusCardsImagesNonActive[Math.abs(1 + nominal)];
+            return active
+                    ? bonusCardsImagesActive[Math.abs(1 + nominal)]
+                    : bonusCardsImagesNonActive[Math.abs(1 + nominal)];
         else throw new IllegalArgumentException(nominal + " is not in range [-5;-1] or [1;5]");
     }
 
@@ -183,7 +189,7 @@ public abstract class ImageController {
         return buttonImages[status];
     }
 
-    public static Image getScoreImage(int index) {
+    static Image getScoreImage(int index) {
         return scoreImages[index];
     }
 

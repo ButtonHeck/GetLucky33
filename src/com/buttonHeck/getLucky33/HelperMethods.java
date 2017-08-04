@@ -35,4 +35,9 @@ public class HelperMethods {
     public static void setY(Node node, double y) {
         node.setTranslateY(y);
     }
+
+    public static void setXY(Node node, double x, double y) {
+        node.setTranslateX(x);
+        node.setTranslateY(y);
+    }
 }

@@ -1,19 +1,19 @@
-package com.buttonHeck.getLucky33.controllers;
+package com.buttonHeck.getLucky33.handler;
 
 import org.lwjgl.openal.AL;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.Sound;
 
-public abstract class SoundController {
+public abstract class AudioHandler {
     private static Sound bonusCard, buttonClicked, buttonHovered, resultSound, startSound;
 
     static {
         try {
-            bonusCard = new Sound(SoundController.class.getResource("/audio/bonusCard.ogg"));
-            buttonClicked = new Sound(SoundController.class.getResource("/audio/buttonClicked.ogg"));
-            buttonHovered = new Sound(SoundController.class.getResource("/audio/buttonHovered.ogg"));
-            resultSound = new Sound(SoundController.class.getResource("/audio/result.ogg"));
-            startSound = new Sound(SoundController.class.getResource("/audio/startButton.ogg"));
+            bonusCard = new Sound(AudioHandler.class.getResource("/audio/bonusCard.ogg"));
+            buttonClicked = new Sound(AudioHandler.class.getResource("/audio/buttonClicked.ogg"));
+            buttonHovered = new Sound(AudioHandler.class.getResource("/audio/buttonHovered.ogg"));
+            resultSound = new Sound(AudioHandler.class.getResource("/audio/result.ogg"));
+            startSound = new Sound(AudioHandler.class.getResource("/audio/startButton.ogg"));
         } catch (SlickException e) {
             e.printStackTrace();
         }

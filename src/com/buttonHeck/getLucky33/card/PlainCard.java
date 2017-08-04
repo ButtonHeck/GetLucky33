@@ -1,6 +1,6 @@
-package com.buttonHeck.getLucky33.cards;
+package com.buttonHeck.getLucky33.card;
 
-import com.buttonHeck.getLucky33.controllers.ImageController;
+import com.buttonHeck.getLucky33.handler.ImageHandler;
 import javafx.scene.image.Image;
 
 import java.util.Random;
@@ -14,10 +14,10 @@ public class PlainCard extends Card {
         rnd = new Random();
         cards = new PlainCard[20];
         for (int i = 0; i < 10; i++)
-            cards[i] = new PlainCard(ImageController.getPlainCardImage(i + 1), i + 1);
+            cards[i] = new PlainCard(ImageHandler.getPlainCardImage(i + 1), i + 1);
         for (int i = 0; i < 5; i++) {
-            cards[i + 10] = new PlainCard(ImageController.getBonusCardImage(-1 - i, true), -1 - i);
-            cards[i + 15] = new PlainCard(ImageController.getBonusCardImage(i + 1, true), i + 1);
+            cards[i + 10] = new PlainCard(ImageHandler.getBonusCardImage(-1 - i, true), -1 - i);
+            cards[i + 15] = new PlainCard(ImageHandler.getBonusCardImage(i + 1, true), i + 1);
         }
     }
 

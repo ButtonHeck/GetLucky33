@@ -1,7 +1,7 @@
-package com.buttonHeck.getLucky33.cards;
+package com.buttonHeck.getLucky33.card;
 
 import com.buttonHeck.getLucky33.Game;
-import com.buttonHeck.getLucky33.controllers.ImageController;
+import com.buttonHeck.getLucky33.handler.ImageHandler;
 import javafx.scene.image.Image;
 
 import java.util.Random;
@@ -14,12 +14,12 @@ public class BonusCard extends Card {
 
     static {
         for (int i = -5; i < 0; i++) {
-            playerCards[i + 5] = new BonusCard(ImageController.getBonusCardImage(i, true), i);
-            aiCards[i + 5] = new BonusCard(ImageController.getAiBonusCardImage(), i);
+            playerCards[i + 5] = new BonusCard(ImageHandler.getBonusCardImage(i, true), i);
+            aiCards[i + 5] = new BonusCard(ImageHandler.getAiBonusCardImage(), i);
         }
         for (int i = 1; i < 6; i++) {
-            playerCards[i + 4] = new BonusCard(ImageController.getBonusCardImage(i, true), i);
-            aiCards[i + 4] = new BonusCard(ImageController.getAiBonusCardImage(), i);
+            playerCards[i + 4] = new BonusCard(ImageHandler.getBonusCardImage(i, true), i);
+            aiCards[i + 4] = new BonusCard(ImageHandler.getAiBonusCardImage(), i);
         }
     }
 
@@ -28,11 +28,8 @@ public class BonusCard extends Card {
     }
 
     public void setActive(boolean active) {
-        setImage(ImageController.getBonusCardImage(nominal, active));
-        if (active)
-            setOnMouseClicked(e -> Game.handleBonus(this));
-        else
-            setOnMouseClicked(e -> {/*nop*/});
+        setImage(ImageHandler.getBonusCardImage(nominal, active));
+        setOnMouseClicked(active ? e -> Game.handleBonus(this) : null);
     }
 
     public static BonusCard getRandomPlayerBonusCard() {
@@ -41,11 +38,5 @@ public class BonusCard extends Card {
 
     public static BonusCard getRandomAiBonusCard() {
         return aiCards[rnd.nextInt(aiCards.length)];
-    }
-
-    //don't need to setActive for aiCards - we don't interact with it, meanwhile ai uses flags in Game for activation
-    public static void resetCards() {
-        for (BonusCard c : playerCards)
-            c.setActive(true);
     }
 }

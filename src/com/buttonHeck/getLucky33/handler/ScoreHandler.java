@@ -1,19 +1,20 @@
-package com.buttonHeck.getLucky33;
+package com.buttonHeck.getLucky33.handler;
 
+import com.buttonHeck.getLucky33.Game;
 import com.buttonHeck.getLucky33.card.Card;
-import com.buttonHeck.getLucky33.handler.ImageHandler;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.image.Image;
 
 import static com.buttonHeck.getLucky33.Game.GAME_WIDTH;
+import static com.buttonHeck.getLucky33.Game.WIN_SCORE;
 
-public class Score {
+public class ScoreHandler {
     private int playerScore, aiScore;
     private int playerWinrate, aiWinrate, roundNumber;
     private Canvas gameCanvas;
     private Image score[];
 
-    public Score(Canvas canvas) {
+    public ScoreHandler(Canvas canvas) {
         playerScore = aiScore = playerWinrate = aiWinrate = roundNumber = 0;
         gameCanvas = canvas;
         score = new Image[5];
@@ -22,8 +23,17 @@ public class Score {
     public void drawScoreBulbs() {
         for (int i = 0; i < score.length; i++) {
             score[i] = ImageHandler.getScoreImage(0);
-            gameCanvas.getGraphicsContext2D().drawImage(score[i], GAME_WIDTH / 2 - score[i].getWidth() / 2, 80 + i * score[i].getHeight());
+            gameCanvas.getGraphicsContext2D().drawImage(score[i],
+                    GAME_WIDTH / 2 - score[i].getWidth() / 2,
+                    80 + i * score[i].getHeight());
         }
+    }
+
+    public void renewScoreBulbs(int status) {
+        score[roundNumber] = ImageHandler.getScoreImage(status < 0 ? 1 : (status > 0 ? 2 : 0));
+        gameCanvas.getGraphicsContext2D().drawImage(score[roundNumber],
+                GAME_WIDTH / 2 - score[roundNumber].getWidth() / 2,
+                80 + roundNumber * score[roundNumber].getHeight());
     }
 
     public int playerScoreChanged(Card playerCard) {
@@ -36,18 +46,6 @@ public class Score {
     public int aiScoreChanged(Card aiCard) {
         aiScore += aiCard.getNominal();
         return aiScore;
-    }
-
-    public int getAiScore() {
-        return aiScore;
-    }
-
-    public int getPlayerScore() {
-        return playerScore;
-    }
-
-    public void resetScore() {
-        playerScore = aiScore = 0;
     }
 
     public void resetWinrate() {
@@ -63,14 +61,29 @@ public class Score {
             ++playerWinrate;
     }
 
-    public boolean hasWinrateThree() {
+    public boolean aiNoNeedBonusCard(boolean aiBonusActive) {
+        if (aiScore <= WIN_SCORE - 10 || !aiBonusActive)
+            return true;
+        if (aiScore == WIN_SCORE) {
+            Game.setAiPassed();
+            return true;
+        }
+        return false;
+    }
+
+    public boolean bestOf5Found() {
         return playerWinrate == 3 || aiWinrate == 3;
     }
 
-    public void renewScoreBulbs(int status) {
-        score[roundNumber] = ImageHandler.getScoreImage(status < 0 ? 1 : (status > 0 ? 2 : 0));
-        gameCanvas.getGraphicsContext2D().drawImage(score[roundNumber],
-                GAME_WIDTH / 2 - score[roundNumber].getWidth() / 2,
-                80 + roundNumber * score[roundNumber].getHeight());
+    public int getAiScore() {
+        return aiScore;
+    }
+
+    public int getPlayerScore() {
+        return playerScore;
+    }
+
+    public void resetScore() {
+        playerScore = aiScore = 0;
     }
 }
