@@ -18,14 +18,24 @@ public abstract class ButtonController {
             gameStart, gameTurn, gamePass, gameExit, resultFrame;
 
     static {
+        initializeMenuButtons();
+        initializeGameButtons();
+        initializeResultFrame();
+    }
+
+    private static void initializeMenuButtons() {
         menuStart = new Button(GAME_WIDTH / 4, 100, "Go", true);
         menuExit = new Button(GAME_WIDTH / 1.8, 100, "Exit", true);
+    }
 
+    private static void initializeGameButtons() {
         gameStart = new Button(20, GAME_HEIGHT - 120, "Start", true);
         gameTurn = new Button(xOf(gameStart) + widthOf(gameStart) + 72, GAME_HEIGHT - 120, "Turn", false);
         gamePass = new Button(xOf(gameTurn) + widthOf(gameTurn) + 72, GAME_HEIGHT - 120, "Pass", false);
         gameExit = new Button(xOf(gamePass) + widthOf(gamePass) + 72, GAME_HEIGHT - 120, "Exit", true);
+    }
 
+    private static void initializeResultFrame() {
         resultFrame = new Button(GAME_WIDTH / 2 - ImageController.getResultFrameImage(0).getWidth() / 2,
                 GAME_HEIGHT / 2 - ImageController.getResultFrameImage(0).getHeight() / 2, "", true);
         resultFrame.body.setImage(ImageController.getResultFrameImage(0));
@@ -48,8 +58,7 @@ public abstract class ButtonController {
             text = new Text(txt);
             text.setFont(FONT);
             text.setEffect(textBlur);
-            setX(this, x);
-            setY(this, y);
+            setXY(this, x, y);
             setX(text, xOf(body) + halfWidthOf(body) - halfWidthOf(text));
             setY(text, yOf(body) + halfHeightOf(body) + halfHeightOf(text) - 10);
             setActive(active);
@@ -63,6 +72,27 @@ public abstract class ButtonController {
         }
 
         private void renewActionListeners() {
+            renewMouseHoverListeners();
+            setOnMouseClicked(e -> {
+                if (!active)
+                    return;
+                SoundController.buttonClicked();
+                if (this == gameStart)
+                    initializeGameStartButtonEvent();
+                else if (this == gameTurn)
+                    initializeGameTurnEvent();
+                else if (this == gamePass)
+                    initializeGamePassEvent();
+                else if (this == gameExit)
+                    initializeGameExitEvent();
+                else if (this == menuStart)
+                    initializeMenuStartEvent();
+                else if (this == menuExit)
+                    initializeMenuExitEvent();
+            });
+        }
+
+        private void renewMouseHoverListeners() {
             setOnMouseEntered(e -> {
                 if (!active)
                     return;
@@ -74,52 +104,58 @@ public abstract class ButtonController {
                     return;
                 body.setImage(ImageController.getButtonImage(0));
             });
-            setOnMouseClicked(e -> {
-                if (!active)
-                    return;
-                SoundController.buttonClicked();
-                if (this == gameStart) {
-                    gameStart.setActive(false);
-                    gameTurn.setActive(true);
-                    gamePass.setActive(true);
-                    if (!Game.isInProgress())
-                        Game.initBonusCards();
-                    Game.setPlayerBonusCardsActive(true);
-                    Game.activateAiBonusCards();
-                    Game.addPlainCardPlayer(PlainCard.getRandomPlainCard());
-                    Game.waitForAI();
-                } else if (this == gameTurn) {
-                    Game.setPlayerBonusCardsActive(true);
-                    Game.activateAiBonusCards();
-                    Game.checkScore();
-                    if (Game.isRoundEnded())
-                        return;
-                    if (!Game.isPlayerPassed())
-                        Game.addPlainCardPlayer(PlainCard.getRandomPlainCard());
-                    if (!Game.isAiPassed())
-                        Game.waitForAI();
-                } else if (this == gamePass) {
-                    gamePass.setActive(false);
-                    gameTurn.setActive(false);
-                    Game.setPlayerPassed();
-                    Game.updatePlayerInfo();
-                    Game.checkScore();
-                    if (!Game.isAiPassed())
-                        Game.waitForAI();
-                } else if (this == gameExit) {
-                    Game.toMenu();
-                    Game.resetGame();
-                } else if (this == menuStart) {
-                    gameStart.setActive(true);
-                    gameTurn.setActive(false);
-                    gamePass.setActive(false);
-                    Game.startGame();
-                } else if (this == menuExit) {
-                    SoundController.finish();
-                    System.exit(0);
-                }
-            });
         }
+
+        private void initializeGameStartButtonEvent() {
+            gameStart.setActive(false);
+            gameTurn.setActive(true);
+            gamePass.setActive(true);
+            if (!Game.isInProgress())
+                Game.initBonusCards();
+            Game.setPlayerBonusCardsActive(true);
+            Game.activateAiBonusCards();
+            Game.addPlainCardPlayer(PlainCard.getRandomPlainCard());
+            Game.waitForAI();
+        }
+
+        private static void initializeGameTurnEvent() {
+            Game.setPlayerBonusCardsActive(true);
+            Game.activateAiBonusCards();
+            Game.checkScore();
+            if (Game.isRoundEnded())
+                return;
+            if (!Game.isPlayerPassed())
+                Game.addPlainCardPlayer(PlainCard.getRandomPlainCard());
+            if (!Game.isAiPassed())
+                Game.waitForAI();
+        }
+
+        private void initializeGamePassEvent() {
+            gamePass.setActive(false);
+            gameTurn.setActive(false);
+            Game.setPlayerPassed();
+            Game.updatePlayerInfo();
+            Game.checkScore();
+            if (!Game.isAiPassed())
+                Game.waitForAI();
+        }
+        private static void initializeGameExitEvent() {
+            Game.toMenu();
+            Game.resetGame();
+        }
+
+        private void initializeMenuStartEvent() {
+            gameStart.setActive(true);
+            gameTurn.setActive(false);
+            gamePass.setActive(false);
+            Game.startGame();
+        }
+
+    }
+
+    private static void initializeMenuExitEvent() {
+        SoundController.finish();
+        System.exit(0);
     }
 
     public static Button getMenuStart() {
@@ -146,7 +182,7 @@ public abstract class ButtonController {
         return gameExit;
     }
 
-    public static Button getResultFrame(int status) {
+    public static Button getResultFrameWithStatus(int status) {
         resultFrame.text.setText(status == 0 ? "Draw!" : (Game.getPlayerScore() + " : " + Game.getAiScore()));
         setX(resultFrame.text, halfWidthOf(resultFrame) - halfWidthOf(resultFrame.text));
         resultFrame.setOnMouseEntered(e -> {

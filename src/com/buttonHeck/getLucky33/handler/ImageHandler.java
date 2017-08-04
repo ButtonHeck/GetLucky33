@@ -30,15 +30,8 @@ public abstract class ImageController {
             scoreImages[];
 
     static {
-        createSwingImages();
-        createFXImages();
-    }
-
-    private static void createSwingImages() {
         try {
-            backgroundSW = ImageIO.read(ImageController.class.getResource("/textures/background.png"));
-            backgroundSW = getScaledBufferedImage(backgroundSW, 3);
-            sheet = ImageIO.read(ImageController.class.getResource("/textures/sheet.png"));
+            loadSheets();
             createCardsImageData();
             createResultFrameData();
             createButtonImageData();
@@ -48,84 +41,93 @@ public abstract class ImageController {
         }
     }
 
+    private static void loadSheets() throws IOException {
+        backgroundSW = ImageIO.read(ImageController.class.getResource("/textures/background.png"));
+        backgroundSW = getScaledBufferedImage(backgroundSW, 3);
+        sheet = ImageIO.read(ImageController.class.getResource("/textures/sheet.png"));
+        background = SwingFXUtils.toFXImage(backgroundSW, null);
+    }
+
     private static void createCardsImageData() {
+        createPlainCardsImages();
+        createBonusCardsImages();
+        createAIBonusCardImage();
+    }
+
+    private static void createPlainCardsImages() {
         plainCardsSW = new BufferedImage[20];
         for (int i = 0; i < plainCardsSW.length / 2; i++) {
             plainCardsSW[i] = getScaledBufferedImage(sheet.getSubimage(i * CARD_WIDTH, 0, CARD_WIDTH, CARD_HEIGHT), 2);
             plainCardsSW[i + 10] = getScaledBufferedImage(sheet.getSubimage(i * CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT), 2);
         }
+        plainCardsImages = new Image[plainCardsSW.length];
+        loadFXImages(plainCardsSW, plainCardsImages);
+    }
+
+    private static void createBonusCardsImages() {
         bonusCardsActiveSW = new BufferedImage[10];
+        bonusCardsImagesActive = new Image[bonusCardsActiveSW.length];
         bonusCardsNonActiveSW = new BufferedImage[10];
-        for (int i = 0; i < bonusCardsActiveSW.length; i++) {
+        for (int i = 0; i < bonusCardsActiveSW.length; i++)
             bonusCardsActiveSW[i] = getScaledBufferedImage(sheet.getSubimage(i * CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT), 2);
-            bonusCardsNonActiveSW[i] = getScaledBufferedImage(sheet.getSubimage(i * CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT), 2);
-        }
+        loadFXImages(bonusCardsActiveSW, bonusCardsImagesActive);
+        createNonActiveCardsImages();
+    }
+
+    private static void createNonActiveCardsImages() {
         for (int i = 0; i < 5; i++) {
+            bonusCardsNonActiveSW[i] = getScaledBufferedImage(sheet.getSubimage(i * CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT), 2);
+            bonusCardsNonActiveSW[i + 5] = getScaledBufferedImage(sheet.getSubimage((i + 5) * CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT), 2);
             changeColor(bonusCardsNonActiveSW[i], 0xFFBE2632, 0xFF707070);
             changeColor(bonusCardsNonActiveSW[i], 0xFFEECBC1, 0xFFCCCCCC);
+            changeColor(bonusCardsNonActiveSW[i + 5], 0xFF36772F, 0xFF707070);
+            changeColor(bonusCardsNonActiveSW[i + 5], 0xFFCAF39E, 0xFFCCCCCC);
         }
-        for (int i = 5; i < bonusCardsNonActiveSW.length; i++) {
-            changeColor(bonusCardsNonActiveSW[i], 0xFF36772F, 0xFF707070);
-            changeColor(bonusCardsNonActiveSW[i], 0xFFCAF39E, 0xFFCCCCCC);
-        }
+        bonusCardsImagesNonActive = new Image[bonusCardsNonActiveSW.length];
+        loadFXImages(bonusCardsNonActiveSW, bonusCardsImagesNonActive);
+    }
+
+    private static void createAIBonusCardImage() {
         aiBonusCardSW = getScaledBufferedImage(sheet.getSubimage(8 * CARD_WIDTH, 2 * CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT), 2);
+        aiBonusCardImage = SwingFXUtils.toFXImage(aiBonusCardSW, null);
     }
 
     private static void createResultFrameData() {
         resultFrameSW = new BufferedImage[4];
-        for (int i = 0; i < resultFrameSW.length; i++) {
+        for (int i = 0; i < resultFrameSW.length; i++)
             resultFrameSW[i] = getScaledBufferedImage(sheet.getSubimage(80, 96, 5 * CARD_WIDTH, 23), 4);
-        }
         changeColor(resultFrameSW[1], 0xFF999999, 0xFFF43955);
         changeColor(resultFrameSW[2], 0xFF999999, 0xFF50C556);
         changeColor(resultFrameSW[3], 0xFF999999, 0xFFFFFFFF);
+        resultFrameImages = new Image[resultFrameSW.length];
+        loadFXImages(resultFrameSW, resultFrameImages);
     }
 
     private static void createButtonImageData() {
         buttonSW = new BufferedImage[3];
-        for (int i = 0; i < buttonSW.length; i++) {
+        for (int i = 0; i < buttonSW.length; i++)
             buttonSW[i] = getScaledBufferedImage(sheet.getSubimage(0, 96, 2 * CARD_WIDTH, 32), 3);
-        }
         changeColor(buttonSW[1], 0xFFBB9EBB, 0xFFFFFFFF);
         changeColor(buttonSW[2], 0xFFBB9EBB, 0xFF704D70);
+        buttonImages = new Image[buttonSW.length];
+        loadFXImages(buttonSW, buttonImages);
     }
 
     private static void createScoreImageData() {
         scoreSW = new BufferedImage[3];
-        for (int i = 0; i < scoreSW.length; i++) {
+        for (int i = 0; i < scoreSW.length; i++)
             scoreSW[i] = getScaledBufferedImage(sheet.getSubimage(64, 96, 16, 16), 2);
-        }
         changeColor(scoreSW[1], 0xFFAAAAAA, 0xFFF43955);
         changeColor(scoreSW[1], 0xFFD1D0D0, 0xFFFFFFFF);
         changeColor(scoreSW[2], 0xFFAAAAAA, 0xFF50C556);
         changeColor(scoreSW[2], 0xFFD1D0D0, 0xFFFFFFFF);
+        scoreImages = new Image[scoreSW.length];
+        loadFXImages(scoreSW, scoreImages);
     }
 
-    private static void createFXImages() {
-        background = SwingFXUtils.toFXImage(backgroundSW, null);
-        plainCardsImages = new Image[plainCardsSW.length];
-        for (int i = 0; i < plainCardsImages.length; i++) {
-            plainCardsImages[i] = SwingFXUtils.toFXImage(plainCardsSW[i], null);
-        }
-        bonusCardsImagesActive = new Image[bonusCardsActiveSW.length];
-        bonusCardsImagesNonActive = new Image[bonusCardsNonActiveSW.length];
-        for (int i = 0; i < bonusCardsImagesActive.length; i++) {
-            bonusCardsImagesActive[i] = SwingFXUtils.toFXImage(bonusCardsActiveSW[i], null);
-            bonusCardsImagesNonActive[i] = SwingFXUtils.toFXImage(bonusCardsNonActiveSW[i], null);
-        }
-        aiBonusCardImage = SwingFXUtils.toFXImage(aiBonusCardSW, null);
-        resultFrameImages = new Image[resultFrameSW.length];
-        for (int i = 0; i < resultFrameImages.length; i++) {
-            resultFrameImages[i] = SwingFXUtils.toFXImage(resultFrameSW[i], null);
-        }
-        buttonImages = new Image[buttonSW.length];
-        for (int i = 0; i < buttonImages.length; i++) {
-            buttonImages[i] = SwingFXUtils.toFXImage(buttonSW[i], null);
-        }
-        scoreImages = new Image[scoreSW.length];
-        for (int i = 0; i < scoreImages.length; i++) {
-            scoreImages[i] = SwingFXUtils.toFXImage(scoreSW[i], null);
-        }
+    private static void loadFXImages(BufferedImage[] src, Image[] dest) {
+        for (int i = 0; i < src.length; i++)
+            dest[i] = SwingFXUtils.toFXImage(src[i], null);
     }
 
     private static void changeColor(BufferedImage image, int oldColor, int newColor) {
